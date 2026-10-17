@@ -52,12 +52,25 @@ for(const id of ['calendar-event-style','calendar-event-background','calendar-da
  save();renderCalendar();
 };
 const palette=[['Grün','#95d1ad'],['Blau','#94bfff'],['Lila','#ceb0f4'],['Rosa','#f4acc8'],['Orange','#ffc185'],['Gelb','#f0df88'],['Rot','#ef9292']];
-function syncColors(){$('exam-colors').querySelectorAll('[data-color]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.color===$('exam-color').value)));}
+function syncColors(){
+ const selected=$('exam-color').value.toLowerCase();
+ $('exam-colors').querySelectorAll('[data-color]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.color===selected)));
+ const remove=$('exam-remove-color');
+ if(remove){remove.disabled=!C.customColors(state.customColors).includes(selected)||palette.some(p=>p[1]===selected);remove.title=remove.disabled?'Wähle eine selbst gespeicherte Farbe zum Löschen.':'Ausgewählte Farbvorlage löschen';}
+}
 function renderColorPresets(){
  const custom=C.customColors(state.customColors).filter(color=>!palette.some(p=>p[1]===color));
  const colors=palette.concat(custom.map(color=>['Eigene Farbe '+color,color]));
- $('exam-colors').innerHTML=colors.map(([name,color])=>`<button type="button" data-color="${color}" style="background:${color}" aria-label="${name}" title="${name}"></button>`).join('')+'<button type="button" id="exam-save-color" class="save-color" aria-label="Aktuelle Farbe als Vorlage speichern" title="Aktuelle Farbe als Vorlage speichern">+</button>';
+ $('exam-colors').innerHTML=colors.map(([name,color])=>`<button type="button" data-color="${color}" style="background:${color}" aria-label="${name}" title="${name}"></button>`).join('')+'<button type="button" id="exam-save-color" class="save-color" aria-label="Aktuelle Farbe als Vorlage speichern" title="Aktuelle Farbe als Vorlage speichern">+</button><button type="button" id="exam-remove-color" class="remove-color secondary" disabled>Farbe löschen</button>';
  $('exam-colors').querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>{$('exam-color').value=b.dataset.color;$('exam-color-status').textContent='';syncColors();});
+ $('exam-remove-color').onclick=()=>{
+  const color=$('exam-color').value.toLowerCase();
+  if(palette.some(p=>p[1]===color)||!C.customColors(state.customColors).includes(color))return;
+  state.customColors=C.customColors(state.customColors).filter(value=>value!==color);
+  save();renderColorPresets();
+  $('exam-color-status').textContent='Farbvorlage gelöscht. Bestehende Termine behalten ihre Farbe.';
+  $('exam-save-color').focus();
+ };
  $('exam-save-color').onclick=()=>{
   const color=$('exam-color').value.toLowerCase();
   const existing=palette.some(p=>p[1]===color)||C.customColors(state.customColors).includes(color);
@@ -91,7 +104,7 @@ $('exam-form').onsubmit=e=>{
  e.preventDefault();try{
  const old=state.exams.find(e=>e.id===editingExam);
  const exam=C.validateExams([{title:$('exam-title').value,date:$('exam-date').value,endDate:$('exam-end-date').value,time:$('exam-time').value,endTime:$('exam-end-time').value,color:$('exam-color').value,place:$('exam-place').value,notes:$('exam-notes').value,done:old?.done||false}])[0];
- exam.id=editingExam||C.uid();if(old)state.exams=state.exams.map(e=>e.id===editingExam?exam:e);else state.exams.push(exam);
+ exam.id=editingExam||C.uid();exam.calendarUid=old?.calendarUid||exam.calendarUid;if(old)state.exams=state.exams.map(e=>e.id===editingExam?exam:e);else state.exams.push(exam);
  save();calendarMonth=new Date(exam.date+'T12:00:00');renderCalendar();$('exam-dialog').close();toast('Termin gespeichert.');
  }catch(error){$('exam-error').textContent=error.message;}
 };

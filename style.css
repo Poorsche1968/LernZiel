@@ -21,3 +21,9 @@
 
 [data-grade] small, [data-w-action="rate"] small { display:block; font-size:.75rem; margin-top:4px; opacity:.85; }
 .flashcard .answer { white-space:pre-wrap; overflow-wrap:anywhere; }
+
+.color-presets .remove-color{width:auto;padding:0 14px;font-size:13px;}
+
+.push-settings{margin-top:24px}.push-settings details{margin:16px 0}.push-settings details label{display:block;margin:12px 0}.push-options{display:flex;gap:16px;flex-wrap:wrap;margin:18px 0}.push-options label{display:flex;gap:8px;align-items:center}.push-options input[type=checkbox]{width:20px;height:20px}.push-options input[type=time]{width:auto}.push-settings .timer-actions{flex-wrap:wrap;justify-content:flex-start;margin-top:16px}#push-status{color:var(--ink);overflow-wrap:anywhere}
+
+.calendar-export-settings{margin-bottom:24px}.calendar-export-toggle{display:flex;gap:10px;align-items:center;margin:16px 0}.calendar-export-toggle input{width:22px;height:22px;flex-shrink:0}.calendar-export-settings select{margin-left:10px}.calendar-export-settings .timer-actions,#cal-export-dialog .timer-actions{flex-wrap:wrap;justify-content:flex-start;margin-top:16px}#cal-export-dialog{max-width:600px;max-height:90dvh;overflow:auto}#cal-export-list{max-height:220px;overflow:auto;padding-left:22px}#cal-export-warning{color:var(--ink);font-weight:600}#cal-export-warning:empty{display:none}

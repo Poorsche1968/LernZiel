@@ -13,7 +13,7 @@ function validateExams(exams){if(!Array.isArray(exams)||exams.length>2000)throw 
 if(typeof endDate!=='string'||! /^(20\d{2}|2100)-\d{2}-\d{2}$/.test(endDate)||dayKey(new Date(endDate+'T12:00:00'))!==endDate||endDate<e.date)throw Error('Das Enddatum muss am oder nach dem Startdatum liegen.');
 if(typeof endTime!=='string'||endTime&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(endTime)||endTime&&!e.time||endDate===e.date&&endTime&&endTime<=e.time)throw Error('Die Endzeit muss nach der Startzeit liegen.');
 if(typeof color!=='string'||!/^#[0-9a-f]{6}$/i.test(color))throw Error('Bitte eine gültige Terminfarbe wählen.');
-return {id:uid(),title:e.title.trim(),date:e.date,endDate,time:e.time,endTime,color,place:e.place,notes:e.notes,done:e.done};});}
+return {id:uid(),calendarUid:/^[a-zA-Z0-9-]{1,100}@lernzeit\.local$/.test(e.calendarUid||'')?e.calendarUid:uid()+'@lernzeit.local',title:e.title.trim(),date:e.date,endDate,time:e.time,endTime,color,place:e.place,notes:e.notes,done:e.done};});}
 function customColors(raw){return Array.isArray(raw)?[...new Set(raw.filter(color=>typeof color==='string'&&/^#[0-9a-f]{6}$/i.test(color)).map(color=>color.toLowerCase()))]:[];}
 function calendarAppearance(raw){return {style:raw?.style==='subtle'?'subtle':'filled',eventBackground:typeof raw?.eventBackground==='boolean'?raw.eventBackground:true,dayBackground:typeof raw?.dayBackground==='boolean'?raw.dayBackground:true};}
 function initial(){return {version:1,calendarAppearance:calendarAppearance(),customColors:[],goal:60,theme:'auto',plant:'normal',garden:[],exams:[],workshops:[],sessions:[],decks:[deck(example)],active:null};}
