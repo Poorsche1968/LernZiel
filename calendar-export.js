@@ -15,11 +15,11 @@
  function controls(){
   for(const t of ['calendar','reminders']){
    get('handoff-'+t).hidden=!targets().includes(t);
-   get('shortcut-'+t).disabled=!forTarget(t).length||!get('shortcut-ready').checked;
+   if(t==='reminders')get('shortcut-reminders').disabled=!forTarget(t).length||!get('shortcut-ready').checked;
    get('confirm-'+t).disabled=!handed[t].length;
   }
   get('cal-export-download').hidden=!targets().includes('calendar');
-  get('cal-export-download').disabled=!forTarget('calendar').length;
+  get('cal-export-download').disabled=!forTarget('calendar').length;get('reminders-download').disabled=!forTarget('reminders').length;
  }
  function prepare(all=false){
   allMode=all;batch=(all?events():pending()).map(e=>({...e}));handed={calendar:[],reminders:[]};completed={calendar:false,reminders:false};clipTarget=null;
@@ -31,30 +31,33 @@
   for(const e of batch){const li=document.createElement('li');li.textContent=`${e.date}${e.time?' · '+e.time:''} – ${e.title}`;get('cal-export-list').append(li);}
   const ids=new Set(events().map(e=>e.calendarUid));const removed=new Set(targets().flatMap(t=>Object.keys(map(t)).filter(id=>!ids.has(id)))).size;
   get('cal-export-warning').textContent=(batch.some(e=>targets().some(t=>map(t)[e.calendarUid]))?'Geänderte oder erneut exportierte Einträge können doppelt angelegt werden. Bestehende Einträge vor dem Hinzufügen prüfen. ':'')+(removed?`${removed} bestätigte Einträge wurden hier entfernt. Entferne diese bei Bedarf auch in den Apple-Apps.`:'');
-  message('Für die direkte Übergabe müssen die Kurzbefehle einmal auf deinem iPhone eingerichtet werden.');controls();
+  message('Kalender: ICS-Datei. Erinnerungen: Text für deinen angepassten Galerie-Kurzbefehl.');controls();
  }
  function open(all=false){prepare(all);if(!get('cal-export-dialog').open)get('cal-export-dialog').showModal();}
  function markHanded(t,list){handed[t]=list.map(e=>({...e}));controls();message('Übergabe gestartet. Prüfe die Einträge in der Apple-App und bestätige anschließend hier das jeweilige Ziel.');}
  function launch(t){
   const list=forTarget(t);if(!list.length||!get('shortcut-ready').checked)return;
-  const data=ShortcutBridge.payload(list,prefs.before,t),url=ShortcutBridge.url(t,data);
-  if(url.length>12000){clipTarget={target:t,list,data};get('shortcut-manual-copy').hidden=true;get('shortcut-text').value=JSON.stringify(data);get('shortcut-clipboard').hidden=false;get('shortcut-clipboard-run').disabled=true;message('Für diese große Auswahl zuerst die Daten kopieren, dann den Kurzbefehl starten.');return;}
+  const data=ShortcutBridge.text(list,prefs.before),url=ShortcutBridge.url(data);
+  if(url.length>12000){clipTarget={target:t,list,data};get('shortcut-manual-copy').hidden=true;get('shortcut-text').value=data;get('shortcut-clipboard').hidden=false;get('shortcut-clipboard-run').disabled=true;message('Für diese große Auswahl zuerst die Daten kopieren, dann den Kurzbefehl starten.');return;}
   markHanded(t,list);location.href=url;
  }
  for(const t of ['calendar','reminders']){
-  get('shortcut-'+t).onclick=()=>launch(t);
+  if(t==='reminders')get('shortcut-reminders').onclick=()=>launch(t);
   get('confirm-'+t).onclick=()=>{if(!handed[t].length)return;for(const e of handed[t])map(t)[e.calendarUid]=X.signature(e,prefs.before);persist();handed[t]=[];completed[t]=true;controls();refresh();message((t==='calendar'?'Kalender':'Erinnerungen')+' als übernommen bestätigt.');if(targets().every(t=>!forTarget(t).length)){get('cal-export-dialog').close();toast('Übernahme für die gewählten Ziele bestätigt.');}};
  }
- get('shortcut-copy').onclick=async()=>{if(!clipTarget)return;try{await navigator.clipboard.writeText(JSON.stringify(clipTarget.data));get('shortcut-clipboard-run').disabled=false;message('Kopiert. Jetzt den Kurzbefehl starten.');}catch{message('Kopieren nicht erlaubt. Text unten vollständig auswählen und kopieren.');get('shortcut-manual-copy').hidden=false;}};
+ get('shortcut-copy').onclick=async()=>{if(!clipTarget)return;try{await navigator.clipboard.writeText(clipTarget.data);get('shortcut-clipboard-run').disabled=false;message('Kopiert. Jetzt den Kurzbefehl starten.');}catch{message('Kopieren nicht erlaubt. Text unten vollständig auswählen und kopieren.');get('shortcut-manual-copy').hidden=false;}};
  get('shortcut-manual-copy').onclick=()=>{get('shortcut-clipboard-run').disabled=false;};
- get('shortcut-clipboard-run').onclick=()=>{if(!clipTarget)return;markHanded(clipTarget.target,clipTarget.list);location.href=ShortcutBridge.url(clipTarget.target,null);};
+ get('shortcut-clipboard-run').onclick=()=>{if(!clipTarget)return;markHanded(clipTarget.target,clipTarget.list);location.href=ShortcutBridge.url(null);};
  get('shortcut-ready').onchange=controls;
- get('cal-export-share').onclick=()=>{get('cal-export-followup').hidden=false;controls();message('Bei „Beide“ die Kurzbefehle nacheinander starten und die Übernahme getrennt bestätigen.');};
+ get('cal-export-share').onclick=()=>{get('cal-export-followup').hidden=false;controls();message('Kalenderdatei importieren und Erinnerungen über den angepassten Kurzbefehl hinzufügen. Jedes Ziel anschließend getrennt bestätigen.');};
  get('cal-export-download').onclick=()=>{
   try{const list=forTarget('calendar');if(!list.length)return;
    for(const e of list){const sig=X.signature(e,prefs.before),old=prefs.versions[e.calendarUid];if(!old||old.signature!==sig)prefs.versions[e.calendarUid]={signature:sig,sequence:old?(Number(old.sequence)||0)+1:0};}persist();
    const url=URL.createObjectURL(new Blob([X.build(list,prefs.before,prefs.versions)],{type:'text/calendar;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='Lernzeit-Termine.ics';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);markHanded('calendar',list);
   }catch(e){message('Export fehlgeschlagen: '+e.message);}
+ };
+ get('reminders-download').onclick=()=>{
+  try{const list=forTarget('reminders');if(!list.length)return;const url=URL.createObjectURL(new Blob([ShortcutBridge.text(list,prefs.before)],{type:'text/plain;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='Lernzeit-Erinnerungen.txt';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);markHanded('reminders',list);message('Textdatei gespeichert. Inhalt an den angepassten Kurzbefehl übergeben; erst nach tatsächlicher Anlage bestätigen.');}catch(e){message('Export fehlgeschlagen: '+e.message);}
  };
  get('cal-export-target').onchange=e=>{prefs.target=e.target.value;persist();prepare(allMode);refresh();};
  get('cal-export-later').onclick=()=>get('cal-export-dialog').close();get('cal-export-open').onclick=()=>open(false);get('cal-export-all').onclick=()=>open(true);
