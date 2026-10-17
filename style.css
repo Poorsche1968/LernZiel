@@ -18,3 +18,6 @@
 #kalender.no-day-background .calendar-day.ni-vacation-day{background:var(--bg)}
 #kalender.no-day-background .calendar-day.ni-vacation-day.outside-month{background:var(--card)}
 .color-presets .save-color{background:var(--bg);color:var(--ink);border:2px dashed var(--muted);font-size:26px;line-height:1;font-weight:400}.color-presets .save-color:hover{background:var(--soft)}.color-help{margin-top:-6px}#exam-color-status:empty{display:none}
+
+[data-grade] small, [data-w-action="rate"] small { display:block; font-size:.75rem; margin-top:4px; opacity:.85; }
+.flashcard .answer { white-space:pre-wrap; overflow-wrap:anywhere; }
